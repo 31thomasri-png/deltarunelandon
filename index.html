@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <base href="https://cdn.jsdelivr.net/gh/skidding-code/deltarune/">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>DELTARUNE</title>
-  <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/soul.png">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <link rel="icon" type="image/png" href="icons/soul.png">
+  <link rel="stylesheet" href="style.css">
 <style>
   :root { --ctrl-scale: 1.3; }
   *{
@@ -42,8 +42,8 @@
   }
 
   #game-frame { 
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-      border: none; z-index: 1; outline: none; display: none;
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      border: none; z-index: 1; outline: none; display: none; background: #000;
   }
 
   #hud-layer { 
@@ -120,7 +120,7 @@
 <body>
   <div id="main-menu-ui">
     <div class="logo-container">
-      <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/logo.png" alt="Logo" class="logo">
+      <img src="logo.png" alt="Logo" class="logo">
     </div>
 
     <div id="notice-container"></div>
@@ -129,56 +129,44 @@
       <a href="javascript:loadChapter(1)" class="row">
         <span class="chapter">CHAPTER 1</span>
         <span class="title">The Beginning</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/1.png">
+        <img src="icons/1.png">
       </a>
       <a href="javascript:loadChapter(2)" class="row">
         <span class="chapter">CHAPTER 2</span>
         <span class="title">A Cyber's World</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/2.png">
+        <img src="icons/2.png">
       </a>
       <a href="javascript:loadChapter(3)" class="row">
         <span class="chapter">CHAPTER 3</span>
         <span class="title">Late Night</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/3.png">
+        <img src="icons/3.png">
       </a>
       <a href="javascript:loadChapter(4)" class="row">
         <span class="chapter">CHAPTER 4</span>
         <span class="title">Prophecy</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/4.png">
+        <img src="icons/4.png">
       </a>
       <a href="javascript:loadChapter(5)" class="row">
         <span class="chapter">CHAPTER 5</span>
         <span class="title">Festival Day</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/5.png">
+        <img src="icons/5.png">
       </a>
       <a href="javascript:alert('Chapter 6 coming soon!')" class="disabled-row">
         <span class="chapter">CHAPTER 6</span>
         <span class="disabled-title">--</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/0.png">
+        <img src="icons/0.png">
       </a>
       <a href="javascript:alert('Chapter 7 coming soon!')" class="disabled-row">
         <span class="chapter">CHAPTER 7</span>
         <span class="disabled-title">--</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/0.png">
+        <img src="icons/0.png">
       </a>
       
       <a href="javascript:toggleMobileHardware()" class="row">
         <span class="chapter">SYSTEM</span>
         <span class="title" id="mobile-controls-status-text">Mobile controls: OFF</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/mobile.png" style="opacity:1;">
+        <img src="icons/mobile.png" style="opacity:1;">
       </a>
-
-      <a href="javascript:exportSave()" class="row">
-        <span class="chapter">SAVE DATA</span>
-        <span class="title">Export Save (.zip)</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/export.png" style="opacity:1;">
-      </a>
-      <a href="javascript:document.getElementById('importFile').click()" class="row">
-        <span class="chapter">SAVE DATA</span>
-        <span class="title">Import Save (.zip)</span>
-        <img src="https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/icons/import.png" style="opacity:1;">
-      </a>
-      <input type="file" id="importFile" accept=".zip" style="display:none" onchange="importSave(this)">
     </div>
   </div>
 
@@ -210,7 +198,7 @@
   </div>
 
   <script>
-    const REPO_BASE = "https://cdn.jsdelivr.net/gh/ByAlvaro19/deltarune/";
+    const REPO_BASE = "https://cdn.jsdelivr.net/gh/skidding-code/deltarune/";
     const sndMenuMove = new Audio(REPO_BASE + 'audios/snd_menumove.mp3');
     const sndSelect = new Audio(REPO_BASE + 'audios/snd_select.mp3');
 
@@ -224,133 +212,157 @@
       sndSelect.play().catch(() => {});
     }
 
-    const DB_NAME = '/_savedata';
-    const STORE_NAME = 'FILE_DATA';
+    const IDB = '/_savedata';
+    const STORE = 'FILE_DATA';
 
-    function getDB() {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME);
-        request.onupgradeneeded = (e) => {
-          e.target.result.createObjectStore(STORE_NAME);
-        };
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
+    function openDB() {
+      return new Promise((res, rej) => {
+        const r = indexedDB.open(IDB);
+        r.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
+        r.onsuccess = e => res(e.target.result);
+        r.onerror = e => rej(e.target.error);
       });
     }
 
-    async function getAllSaves() {
-      const db = await getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readonly');
-        const store = tx.objectStore(STORE_NAME);
-        const request = store.openCursor();
-        const data = {};
-        request.onsuccess = (e) => {
-          const cursor = e.target.result;
-          if (cursor) {
-            data[cursor.key] = cursor.value;
-            cursor.continue();
-          } else {
-            resolve(data);
-          }
+    function enc(v) {
+      let s = '';
+      const u = new Uint8Array(v.buffer, v.byteOffset, v.byteLength);
+      for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]);
+      return btoa(s);
+    }
+
+    function dec(b, T) {
+      const s = atob(b);
+      const u = new Uint8Array(s.length);
+      for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i);
+      return new T(u.buffer);
+    }
+
+    function serialize(entries) {
+      const o = {};
+      for (const [k, v] of Object.entries(entries)) {
+        o[k] = v?.timestamp !== undefined
+          ? { _t: 'f', ts: +v.timestamp, mode: v.mode, data: enc(v.contents) }
+          : ArrayBuffer.isView(v)
+            ? { _t: v.constructor.name, data: enc(v) }
+            : v;
+      }
+      return o;
+    }
+
+    function deserialize(entries) {
+      const o = {};
+      for (const [k, v] of Object.entries(entries)) {
+        o[k] = v?._t === 'f'
+          ? { timestamp: new Date(v.ts), mode: v.mode, contents: dec(v.data, Int8Array) }
+          : v?._t
+            ? dec(v.data, globalThis[v._t] ?? Uint8Array)
+            : v;
+      }
+      return o;
+    }
+
+    async function dbGetAll() {
+      const db = await openDB();
+      return new Promise((res, rej) => {
+        const tx = db.transaction(STORE, 'readonly');
+        const st = tx.objectStore(STORE);
+        let keys;
+        let vals;
+        st.getAllKeys().onsuccess = e => keys = e.target.result;
+        st.getAll().onsuccess = e => vals = e.target.result;
+        tx.oncomplete = () => {
+          db.close();
+          const o = {};
+          keys.forEach((k, i) => o[k] = vals[i]);
+          res(o);
         };
-        request.onerror = (e) => reject(e.target.error);
+        tx.onerror = e => {
+          db.close();
+          rej(e.target.error);
+        };
       });
     }
 
-    async function setSaveItem(key, textContent) {
-      const db = await getDB();
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, 'readwrite');
-        
-        const uint8Contents = new TextEncoder().encode(textContent);
-        const emscriptenFileObj = {
-          timestamp: new Date(),
-          mode: 33206, 
-          contents: uint8Contents
+    async function dbPutAll(entries) {
+      const db = await openDB();
+      return new Promise((res, rej) => {
+        const tx = db.transaction(STORE, 'readwrite');
+        const st = tx.objectStore(STORE);
+        for (const [k, v] of Object.entries(entries)) st.put(v, k);
+        tx.oncomplete = () => {
+          db.close();
+          res();
         };
-
-        tx.objectStore(STORE_NAME).put(emscriptenFileObj, key);
-        tx.oncomplete = () => resolve();
-        tx.onerror = (e) => reject(e.target.error);
+        tx.onerror = e => {
+          db.close();
+          rej(e.target.error);
+        };
       });
+    }
+
+    function toast(msg, err) {
+      const t = document.getElementById('save-toast');
+      if (!t) return;
+      t.textContent = msg;
+      t.style.color = err ? '#f99' : '#9f9';
+      t.style.borderColor = err ? '#933' : '#3a3';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
     }
 
     async function exportSave() {
-      playSelect();
-      const zip = new JSZip();
-      let hasData = false;
-
       try {
-        const allData = await getAllSaves();
-        for (const key in allData) {
-          if (key.includes('filech') || key.includes('dr_') || key.includes('_savedata')) {
-            const cleanKey = key.replace(/^\/_savedata\//, '');
-            
-            let rawText = "";
-            if (allData[key] && allData[key].contents) {
-              rawText = new TextDecoder().decode(allData[key].contents);
-            } else if (typeof allData[key] === 'string') {
-              rawText = allData[key];
-            }
-
-            zip.file(cleanKey, rawText);
-            hasData = true;
-          }
-        }
-
-        if (!hasData) {
-          alert('No save data found in the engine database!');
-          return;
-        }
-
-        zip.generateAsync({type:"blob"}).then(function(content) {
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(content);
-          a.download = "deltarune_saves.zip";
-          a.click();
+        const e = await dbGetAll();
+        if (!Object.keys(e).length) return toast('no save data found.', true);
+        const a = Object.assign(document.createElement('a'), {
+          href: URL.createObjectURL(new Blob([JSON.stringify(serialize(e))], { type: 'application/json' })),
+          download: 'deltaroom.dylan'
         });
-      } catch (err) {
-        alert('Failed to export saves.');
-        console.error(err);
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('save exported!', false);
+      } catch {
+        toast('export failed.', true);
       }
     }
 
-    function importSave(input) {
-      playSelect();
-      const file = input.files[0];
-      if (!file) return;
+    async function importSave(file) {
+      if (!confirm('Warning: importing will overwrite your Deltarune AND Undertale save data. Continue?')) return;
+      try {
+        await dbPutAll(deserialize(JSON.parse(await file.text())));
+        toast('save loaded! reloading...', false);
+        setTimeout(() => location.reload(), 1200);
+      } catch (e) {
+        console.error(e);
+        toast('invalid save file.', true);
+      }
+    }
 
-      const zip = new JSZip();
-      zip.loadAsync(file).then(function(jsZipInstance) {
-        const promises = [];
-        
-        jsZipInstance.forEach(function (relativePath, zipEntry) {
-          if (!zipEntry.dir) {
-            const p = zipEntry.async("string").then(function (content) {
-              let fullKey = zipEntry.name;
-              if (!fullKey.startsWith('/_savedata/')) {
-                fullKey = '/_savedata/' + fullKey;
-              }
-              return setSaveItem(fullKey, content);
-            });
-            promises.push(p);
-          }
-        });
-
-        if (promises.length === 0) {
-          throw new Error("Zip file is empty!");
+    function injectSaveBar() {
+      if (document.getElementById('save-bar')) return;
+      document.head.insertAdjacentHTML('beforeend', `<style>
+        #save-bar{position:fixed;bottom:18px;right:18px;display:flex;gap:8px;z-index:9999}
+        #save-bar button{background:rgba(0,0,0,.75);color:#ccc;border:1px solid #444;padding:6px 14px;font-size:12px;letter-spacing:.08em;cursor:pointer;font-family:inherit;transition:.15s}
+        #save-bar button:hover{background:rgba(255,255,255,.08);color:#fff;border-color:#888}
+        #save-toast{position:fixed;bottom:58px;right:18px;background:rgba(0,0,0,.85);border:1px solid #3a3;padding:6px 14px;font-size:12px;letter-spacing:.08em;font-family:inherit;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999}
+        #save-toast.show{opacity:1}
+      </style>`);
+      document.body.insertAdjacentHTML('beforeend', `<div id="save-bar"><button id="btn-import">IMPORT SAVE</button><button id="btn-export">EXPORT SAVE</button><input id="import-input" type="file" accept=".dylan" style="display:none"></div><div id="save-toast"></div>`);
+      document.getElementById('btn-export').addEventListener('click', exportSave);
+      document.getElementById('btn-import').addEventListener('click', () => {
+        alert('Any .dylan file works here. deltaroom.dylan and understory.dylan are both compatible.');
+        document.getElementById('import-input').click();
+      });
+      document.getElementById('import-input').addEventListener('change', function() {
+        if (this.files[0]) {
+          importSave(this.files[0]);
+          this.value = '';
         }
-
-        return Promise.all(promises);
-      }).then(function() {
-        alert('Saves imported successfully! Reloading...');
-        window.location.reload();
-      }).catch(err => {
-        alert("Error importing zip file.");
-        console.error(err);
       });
     }
+
+    injectSaveBar();
 
     document.querySelectorAll('.row, .disabled-row').forEach(row => {
       row.addEventListener('click', () => {
@@ -507,8 +519,6 @@
         const receiver = `<script>
             const r = () => { 
                 window.dispatchEvent(new Event('resize'));
-                const canvas = document.querySelector('canvas');
-                if(canvas) { canvas.style.width = '100vw'; canvas.style.height = '100vh'; }
             };
             let count = 0;
             const interval = setInterval(() => { r(); if(count++ > 30) clearInterval(interval); }, 100);
@@ -602,10 +612,6 @@
              loadChapter(chNum);
           } else if (targetRow.href && targetRow.href.includes('toggleMobileHardware')) {
              toggleMobileHardware();
-          } else if (targetRow.href && targetRow.href.includes('exportSave')) {
-             exportSave();
-          } else if (targetRow.href && targetRow.href.includes('importFile')) {
-             document.getElementById('importFile').click();
           }
         }
       }

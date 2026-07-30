@@ -117,7 +117,7 @@
   #loader-screen { position: fixed; inset: 0; background: #111; color: white; display: none; justify-content: center; align-items: center; z-index: 100; font-family: sans-serif; }
 </style>
 </head>
-<body>
+<body tabindex="-1">
   <div id="main-menu-ui">
     <div class="logo-container">
       <img src="logo.png" alt="Logo" class="logo">
@@ -171,7 +171,7 @@
   </div>
 
   <div id="loader-screen"><p>Launching...</p></div>
-  <iframe id="game-frame"></iframe>
+  <iframe id="game-frame" tabindex="0"></iframe>
 
   <div id="hud-layer">
       <div id="dpad-group" class="touch-group draggable" data-save-id="dpad">
@@ -387,8 +387,51 @@
     let isEditing = false;
     let config = { opacity: 1, scale: 1.3, positions: {} };
 
-    const keyMap = { 'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39, 'z': 90, 'x': 88, 'c': 67 };
+    const keyMap = { 'ArrowUp': 38, 'ArrowDown': 40, 'ArrowLeft': 37, 'ArrowRight': 39, 'Enter': 13, 'Shift': 16, 'Escape': 27, 'z': 90, 'x': 88, 'c': 67 };
     const activeKeys = new Set();
+
+    function gameKey(event) {
+        const key = event.key && event.key.length === 1 ? event.key.toLowerCase() : event.key;
+        return Object.prototype.hasOwnProperty.call(keyMap, key) ? key : null;
+    }
+
+    function focusGame() {
+        if (!gamestarted) {
+            document.body.focus({ preventScroll: true });
+            return;
+        }
+        frame.focus({ preventScroll: true });
+        try {
+            frame.contentWindow.focus();
+            const target = frame.contentDocument.querySelector('#canvas, canvas, body');
+            if (target) {
+                if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+                target.focus({ preventScroll: true });
+            }
+        } catch {}
+    }
+
+    function forwardGameKeyboard(event) {
+        if (!gamestarted || event.defaultPrevented) return;
+        const key = gameKey(event);
+        if (!key) return;
+        event.preventDefault();
+        frame.contentWindow.postMessage({
+            type: event.type,
+            key,
+            code: event.code,
+            keyCode: keyMap[key],
+            repeat: event.repeat
+        }, '*');
+    }
+
+    document.addEventListener('keydown', forwardGameKeyboard, true);
+    document.addEventListener('keyup', forwardGameKeyboard, true);
+    frame.addEventListener('load', () => {
+        setTimeout(focusGame, 0);
+        setTimeout(focusGame, 250);
+    });
+    frame.addEventListener('pointerdown', () => setTimeout(focusGame, 0));
 
     function updateKey(key, isDown) {
         if (isEditing) return;
@@ -522,9 +565,29 @@
             };
             let count = 0;
             const interval = setInterval(() => { r(); if(count++ > 30) clearInterval(interval); }, 100);
+            const focusGameSurface = () => {
+                const target = document.querySelector('#canvas, canvas, body');
+                if (target) {
+                    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+                    target.focus({ preventScroll: true });
+                }
+                window.focus();
+            };
+            addEventListener('load', focusGameSurface);
+            addEventListener('pointerdown', focusGameSurface, true);
             window.addEventListener('message', e => {
-                const k = new KeyboardEvent(e.data.type, { key: e.data.key, keyCode: e.data.keyCode, bubbles: true });
-                window.dispatchEvent(k); document.dispatchEvent(k);
+                if (!e.data || (e.data.type !== 'keydown' && e.data.type !== 'keyup')) return;
+                const init = { key: e.data.key, code: e.data.code || '', bubbles: true, cancelable: true, repeat: !!e.data.repeat };
+                const makeEvent = () => {
+                    const event = new KeyboardEvent(e.data.type, init);
+                    if (!event.keyCode) {
+                        Object.defineProperty(event, 'keyCode', { value: e.data.keyCode });
+                        Object.defineProperty(event, 'which', { value: e.data.keyCode });
+                    }
+                    return event;
+                };
+                window.dispatchEvent(makeEvent());
+                document.dispatchEvent(makeEvent());
             });
         <\/script>`;
         const blob = new Blob([htmlText.replace('<head>', '<head>' + receiver)], { type: 'text/html' });
@@ -541,6 +604,7 @@
       document.getElementById('loader-screen').style.display = 'flex';
       frame.style.display = 'block';
       applyConfig();
+      focusGame();
       
       const chapterPath = `${REPO_BASE}chapter${chapter}/`;
       
@@ -578,6 +642,7 @@
       if (rows.length === 0) return;
 
       if (event.key === 'ArrowUp') {
+        event.preventDefault();
         playMove();
         if (selectedChapter === null) {
           selectedChapter = 0;
@@ -591,6 +656,7 @@
           if(rows[selectedChapter]) rows[selectedChapter].classList.add("selected");
         }
       } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
         playMove();
         if (selectedChapter === null) {
           selectedChapter = 0;
@@ -604,6 +670,7 @@
           if(rows[selectedChapter]) rows[selectedChapter].classList.add("selected");
         }
       } else if (event.key === 'Enter') {
+        event.preventDefault();
         if (selectedChapter !== null) {
           playSelect();
           const targetRow = rows[selectedChapter];
@@ -647,6 +714,7 @@
         document.getElementById('opacity-slider').value = config.opacity;
         document.getElementById('size-slider').value = config.scale;
         applyConfig();
+        document.body.focus({ preventScroll: true });
     };
   </script>
 </body>
